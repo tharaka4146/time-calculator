@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 function App() {
   var currentdate = new Date();
-  console.log("currentdate", currentdate.getTime());
+  console.log("currentdate", currentdate);
 
   //var diff = d2.getTime() - d1.getTime();
 
