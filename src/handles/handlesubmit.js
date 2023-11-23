@@ -1,20 +1,14 @@
 import { addDoc, collection, getCountFromServer } from "@firebase/firestore";
 import { firestore } from "../firebase_setup/firebase";
 
-const fetchPost = async () => {
-  const coll = collection(firestore, "test_time_collection");
-  const snapshot = await getCountFromServer(coll);
-  console.log("count:============ ", snapshot.data().count);
-  return snapshot.data().count;
-};
+let dateTime = new Date();
 
-export const signingIn = (dateTime) => {
+export const signingIn = () => {
   const ref = collection(firestore, "test_time_collection");
 
   let data = {
     state: 1,
     dateTime: dateTime,
-    id: fetchPost(),
   };
 
   try {
@@ -24,7 +18,7 @@ export const signingIn = (dateTime) => {
   }
 };
 
-export const signingOff = (dateTime) => {
+export const signingOff = () => {
   const ref = collection(firestore, "test_time_collection");
 
   let data = {
@@ -39,7 +33,7 @@ export const signingOff = (dateTime) => {
   }
 };
 
-export const away = (dateTime) => {
+export const away = () => {
   const ref = collection(firestore, "test_time_collection");
 
   let data = {
@@ -54,7 +48,7 @@ export const away = (dateTime) => {
   }
 };
 
-export const back = (dateTime) => {
+export const back = () => {
   const ref = collection(firestore, "test_time_collection");
 
   let data = {
@@ -69,7 +63,7 @@ export const back = (dateTime) => {
   }
 };
 
-export const undo = (dateTime) => {
+export const undo = () => {
   const ref = collection(firestore, "test_time_collection");
 
   let data = {

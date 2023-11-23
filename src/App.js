@@ -6,111 +6,37 @@ import {
   back,
   undo,
 } from "./handles/handlesubmit";
-import { useRef } from "react";
 
-import {
-  collection,
-  getDocs,
-  getCountFromServer,
-  query,
-  orderBy,
-  limit,
-} from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { firestore } from "./firebase_setup/firebase";
 import { useState, useEffect } from "react";
 
 function App() {
-  const [todos, setTodos] = useState([]);
+  const [dateTimeDetails, setDateTimeDetails] = useState([]);
   const [monday, setMonday] = useState([]);
   const [tuesday, setTuesday] = useState([]);
   const [wednesday, setWednesday] = useState([]);
 
-  var currentdate = new Date();
-  // console.log("currentdate", currentdate.getTime());
-
-  // console.log("monday==============", monday);
-  // console.log("tuesday==============", tuesday);
-  // console.log("wednesday==============", wednesday);
-  //var diff = d2.getTime() - d1.getTime();
-
-  const dataRef = useRef();
+  console.log("monday - --------------", monday);
 
   useEffect(() => {
     fetchPost();
   }, []);
 
-  // const getPost = async () => {
-  //   const postCollection = collection(firestore, "test_time_collection");
-  //   const data = await getDocs(query(postCollection, orderBy("date", "desc")));
-  //   const newData = data.docs.map((doc) => ({
-  //     ...doc.data(),
-  //     id: doc.id,
-  //   }));
-
-  //   setPostList(newData);
-  // };
-
   const fetchPost = async () => {
     const postCollection = collection(firestore, "test_time_collection");
     const data = await getDocs(
-      query(postCollection, orderBy("dateTime", "desc"))
+      query(postCollection, orderBy("dateTime", "asc"))
     );
     const newData = data.docs.map((doc) => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    setTodos(newData);
-    console.log("todos======", todos);
-    // setPostList(newData);
-
-    // const coll = collection(firestore, "test_time_collection");
-    // const snapshot = await getCountFromServer(coll);
-    // console.log("count:============ ", snapshot.data().count);
-
-    // await getDocs(collection(firestore, "test_time_collection")).then(
-    //   (querySnapshot) => {
-    //     const newData = querySnapshot.docs.map((doc) => ({
-    //       ...doc.data(),
-    //       id: doc.data().dateTime.seconds,
-    //     }));
-    //     setTodos(newData);
-    //     console.log(todos, todos);
-    //     // console.log("newData", newData[0].dateTime.toDate());
-    //     // newData.forEach((dateTime) => {
-    //     //   console.log("dateTime", dateTime.dateTime.toDate());
-    //     // });
-    //     // console.log("todos", todos[0].dateTime);
-    //     // console.log("todos", todos[2].dateTime);
-    //     // const temp = todos[0].dateTime - todos[2].dateTime;
-    //     // console.log("compare", todos[0].dateTime.compareTo(todos[2].dateTime));
-    //     // console.log("todos difference", temp);
-    //     // console.log("todos difference", temp.toDate());
-    //   }
-    // );
+    setDateTimeDetails(newData);
   };
 
-  // const t1 = new Date(todos[0].dateTime.seconds * 1000); // your initial time
-  // const t2 = new Date(todos[9].dateTime.seconds * 1000); // your later time
-
-  // const diff = t2 - t1;
-  // const SEC = 1000,
-  //   MIN = 60 * SEC,
-  //   HRS = 60 * MIN;
-  // const humanDiff = `${Math.floor(diff / HRS)}:${Math.floor(
-  //   (diff % HRS) / MIN
-  // ).toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${Math.floor(
-  //   (diff % MIN) / SEC
-  // ).toLocaleString("en-US", { minimumIntegerDigits: 2 })}.${Math.floor(
-  //   diff % SEC
-  // ).toLocaleString("en-US", {
-  //   minimumIntegerDigits: 4,
-  //   useGrouping: false,
-  // })}`;
-
-  // console.log("humanDiff:", humanDiff);}
-
-  const getDateOnly = (fullDate) => {
+  const getDate = (fullDate) => {
     return (
       fullDate.getFullYear() +
       "/" +
@@ -121,22 +47,22 @@ function App() {
   };
 
   const getCurrentWeekDate = (weekday) => {
-    let currentDate = new Date(new Date());
+    let currentDate = new Date();
     let day = currentDate.getDay();
     let currentWeekMonday =
       currentDate.getDate() - day + (day == 0 ? -6 : weekday);
-    return getDateOnly(new Date(currentDate.setDate(currentWeekMonday)));
+    return getDate(new Date(currentDate.setDate(currentWeekMonday)));
   };
 
-  const getDifference = (signingInTime, signingOffTime) => {
-    const t1 = new Date(signingInTime.dateTime.seconds * 1000);
-    const t2 = new Date(signingOffTime.dateTime.seconds * 1000);
+  const getDifference = (inTime, offTime) => {
+    const t1 = new Date(inTime.dateTime.seconds * 1000);
+    const t2 = new Date(offTime.dateTime.seconds * 1000);
 
     const diff = t2 - t1;
     const SEC = 1000,
       MIN = 60 * SEC,
       HRS = 60 * MIN;
-    const humanDiff = `${Math.floor(diff / HRS)}:${Math.floor(
+    return `${Math.floor(diff / HRS)}:${Math.floor(
       (diff % HRS) / MIN
     ).toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${Math.floor(
       (diff % MIN) / SEC
@@ -146,98 +72,285 @@ function App() {
       minimumIntegerDigits: 4,
       useGrouping: false,
     })}`;
-
-    console.log("humanDiff============================", humanDiff);
   };
+
+  function timeToMins(time) {
+    var b = time.split(":");
+    return b[0] * 60 + +b[1];
+  }
+  function timeFromMins(mins) {
+    function z(n) {
+      return (n < 10 ? "0" : "") + n;
+    }
+    var h = ((mins / 60) | 0) % 24;
+    var m = mins % 60;
+    return z(h) + ":" + z(m);
+  }
+
+  function addTimes(awayTime) {
+    let totAwayTimeCalc = "00:00:00";
+    awayTime.map((time) => {
+      totAwayTimeCalc = timeFromMins(
+        timeToMins(totAwayTimeCalc) + timeToMins(time)
+      );
+    });
+
+    return totAwayTimeCalc;
+  }
+
+  function subtractTimes(dayWorkTime, dayAwayTime) {
+    let totWorkingTime = "00:00:00";
+    if (dayWorkTime) {
+      totWorkingTime = timeFromMins(
+        timeToMins(dayWorkTime) - timeToMins(dayAwayTime)
+      );
+    }
+    return totWorkingTime;
+  }
 
   let signingInTime;
   let signingOffTime;
+  //
+  const getTotalTimeDifference = (day, dayNumber) => {
+    if (day != "") {
+      day.map((events) => {
+        if (events.state == 1) {
+          signingInTime = events;
+        }
 
-  const getTotalTimeDifference = (day) => {
-    day.map((events) => {
-      signingInTime = events.state == 1 ? events : signingInTime;
-      signingOffTime = events.state == 2 ? events : signingOffTime;
-    });
-    getDifference(signingInTime, signingOffTime);
+        if (events.state == 2) {
+          signingOffTime = events;
+        }
+      });
+
+      switch (dayNumber) {
+        case 0:
+          setMonday([signingInTime, signingOffTime]);
+          break;
+        default:
+          break;
+      }
+
+      return getDifference(signingInTime, signingOffTime);
+    }
   };
 
-  let dayArray = [[], [], [], [], [], []];
+  const getTotalAwayTimeDifference = (day) => {
+    let awayTime = [];
+    let backTime = [];
+    let totAwayTime = [];
+
+    if (day != "") {
+      day.map((events) => {
+        if (events.state == 3) {
+          awayTime.push(events);
+        }
+
+        if (events.state == 4) {
+          backTime.push(events);
+        }
+      });
+
+      for (let index = 0; index < awayTime.length; index++) {
+        totAwayTime.push(getDifference(awayTime[index], backTime[index]));
+      }
+
+      return addTimes(totAwayTime);
+    }
+  };
+
+  let dayDateTime = [[], [], [], [], [], []];
+  let dayWorkTime = [];
+  let dayAwayTime = [];
+  let actualWorkingTime = [];
 
   const timeCalculate = () => {
-    todos.map((dateTime) => {
-      let currentDayDate = getDateOnly(
-        new Date(dateTime.dateTime.seconds * 1000)
+    dateTimeDetails.map((dateTimeDetail) => {
+      //
+      let currentDate = getDate(
+        new Date(dateTimeDetail.dateTime.seconds * 1000)
       );
-
-      switch (currentDayDate) {
+      switch (currentDate) {
         case getCurrentWeekDate(1):
-          dayArray[0].push(dateTime);
-          // setMonday(dayArray[0]);
+          dayDateTime[0].push(dateTimeDetail);
           break;
-        // case getCurrentWeekDate(2):
-        //   dayArray[1].push(dateTime);
-        //   setTuesday(dayArray[1]);
-        //   break;
-        // case getCurrentWeekDate(3):
-        //   dayArray[2].push(dateTime);
-        //   setWednesday(dayArray[2]);
-        //   break;
+        case getCurrentWeekDate(2):
+          dayDateTime[1].push(dateTimeDetail);
+          break;
+        case getCurrentWeekDate(3):
+          dayDateTime[2].push(dateTimeDetail);
+          break;
+        case getCurrentWeekDate(4):
+          dayDateTime[3].push(dateTimeDetail);
+          break;
+        case getCurrentWeekDate(5):
+          dayDateTime[4].push(dateTimeDetail);
+          break;
       }
     });
 
-    console.log("dayArray[0]===========", dayArray[0]);
-
-    dayArray.map((day) => {
-      getTotalTimeDifference(day);
+    dayDateTime.map((singleDayDateTime, dayNumber) => {
+      dayWorkTime.push(getTotalTimeDifference(singleDayDateTime, dayNumber));
+      dayAwayTime.push(
+        getTotalAwayTimeDifference(singleDayDateTime, dayNumber)
+      );
     });
 
-    // dayArray[0].map((singleDay) => {
-    //   signingInTime = singleDay.state == 1 ? singleDay : signingInTime;
-    //   signingOffTime = singleDay.state == 2 ? singleDay : signingOffTime;
-    // });
+    console.log("dayWorkTime", dayWorkTime);
+    console.log("dayAwayTime", dayAwayTime);
 
-    // getDifference(signingInTime, signingOffTime);
+    for (let index = 0; index < dayWorkTime.length; index++) {
+      actualWorkingTime.push(
+        subtractTimes(dayWorkTime[index], dayAwayTime[index])
+      );
+    }
+
+    console.log("actualWorkingTime", actualWorkingTime);
   };
 
   const signingInHandler = (e) => {
-    // console.log("dataRef.current.value", dataRef.current.value);
-    signingIn(currentdate);
+    signingIn();
     e.preventDefault();
-    // handleSubmit(dataRef.current.value);
-    // dataRef.current.value = "";
   };
 
   const signingOffHandler = (e) => {
-    signingOff(currentdate);
+    signingOff();
     e.preventDefault();
   };
 
   const awayHandler = (e) => {
-    away(currentdate);
+    away();
     e.preventDefault();
   };
+
   const backHandler = (e) => {
-    back(currentdate);
+    back();
     e.preventDefault();
   };
+
   const undoHandler = (e) => {
-    undo(currentdate);
+    undo();
     e.preventDefault();
   };
+
+  Date.prototype.customFormat = function (formatString) {
+    var YYYY,
+      YY,
+      MMMM,
+      MMM,
+      MM,
+      M,
+      DDDD,
+      DDD,
+      DD,
+      D,
+      hhhh,
+      hhh,
+      hh,
+      h,
+      mm,
+      m,
+      ss,
+      s,
+      ampm,
+      AMPM,
+      dMod,
+      th;
+    YY = ((YYYY = this.getFullYear()) + "").slice(-2);
+    MM = (M = this.getMonth() + 1) < 10 ? "0" + M : M;
+    MMM = (MMMM = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ][M - 1]).substring(0, 3);
+    DD = (D = this.getDate()) < 10 ? "0" + D : D;
+    DDD = (DDDD = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ][this.getDay()]).substring(0, 3);
+    th =
+      D >= 10 && D <= 20
+        ? "th"
+        : (dMod = D % 10) == 1
+        ? "st"
+        : dMod == 2
+        ? "nd"
+        : dMod == 3
+        ? "rd"
+        : "th";
+    formatString = formatString
+      .replace("#YYYY#", YYYY)
+      .replace("#YY#", YY)
+      .replace("#MMMM#", MMMM)
+      .replace("#MMM#", MMM)
+      .replace("#MM#", MM)
+      .replace("#M#", M)
+      .replace("#DDDD#", DDDD)
+      .replace("#DDD#", DDD)
+      .replace("#DD#", DD)
+      .replace("#D#", D)
+      .replace("#th#", th);
+    h = hhh = this.getHours();
+    if (h == 0) h = 24;
+    if (h > 12) h -= 12;
+    hh = h < 10 ? "0" + h : h;
+    hhhh = hhh < 10 ? "0" + hhh : hhh;
+    AMPM = (ampm = hhh < 12 ? "am" : "pm").toUpperCase();
+    mm = (m = this.getMinutes()) < 10 ? "0" + m : m;
+    ss = (s = this.getSeconds()) < 10 ? "0" + s : s;
+    return formatString
+      .replace("#hhhh#", hhhh)
+      .replace("#hhh#", hhh)
+      .replace("#hh#", hh)
+      .replace("#h#", h)
+      .replace("#mm#", mm)
+      .replace("#m#", m)
+      .replace("#ss#", ss)
+      .replace("#s#", s)
+      .replace("#ampm#", ampm)
+      .replace("#AMPM#", AMPM);
+  };
+
+  // console.log("monday", monday[0].dateTime.seconds);
+
+  var now = new Date(new Date(monday[0].dateTime.seconds * 1000));
+  console.log("@@@@@@@@@@", now.customFormat("#hh#:#mm# #ampm# "));
 
   return (
     <div className="App">
       <button onClick={signingInHandler}>Signing in</button>
+      <br />
+      <br />
       <button onClick={signingOffHandler}>Signing off</button>
+      <br />
+      <br />
       <button onClick={awayHandler}>away</button>
+      <br />
+      <br />
       <button onClick={backHandler}>back</button>
+      <br />
+      <br />
       <button onClick={undoHandler}>undo</button>
+      <br />
+      <br />
       <button onClick={timeCalculate}>time</button>
-
       <br />
       <br />
       <br />
-
       <table>
         <thead>
           <tr>
@@ -249,13 +362,13 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {todos.map((todos, key) => (
+          {dateTimeDetails.map((dateTimeDetails, key) => (
             <tr key={1}>
-              <td>{todos.id}</td>
-              <td>{todos.id}</td>
-              <td>{todos.id}</td>
-              <td>{todos.id}</td>
-              <td>{todos.id}</td>
+              <td>{now.customFormat("#hh#:#mm# #ampm# ")}</td>
+              <td>{dateTimeDetails.id}</td>
+              <td>{dateTimeDetails.id}</td>
+              <td>{dateTimeDetails.id}</td>
+              <td>{dateTimeDetails.id}</td>
             </tr>
           ))}
         </tbody>
